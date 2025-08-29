@@ -22,7 +22,7 @@ export interface Message {
   workflows?: WorkflowResponse[];
 }
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
 
 export async function queryWorkflows(request: QueryRequest): Promise<QueryResponse> {
   const response = await fetch(`${API_BASE_URL}/query`, {
