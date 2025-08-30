@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('🔄 Proxying health check to backend:', `${BACKEND_URL}/health`);
     

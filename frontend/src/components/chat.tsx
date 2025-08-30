@@ -6,8 +6,8 @@ import { MessageComponent } from "./message";
 import { ChatInput } from "./chat-input";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCw, ArrowLeft } from "lucide-react";
-import { Message, queryWorkflows, streamWorkflows } from "@/lib/api";
-import { Card, CardContent } from "@/components/ui/card";
+import { Message, WorkflowResponse, queryWorkflows, streamWorkflows } from "@/lib/api";
+
 
 interface ChatProps {
   onBackToLanding?: () => void;
@@ -17,7 +17,7 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [connectionChecked, setConnectionChecked] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
@@ -57,23 +57,23 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
 
     try {
       let streamedContent = "";
-      let workflows: any[] = [];
+      let workflows: WorkflowResponse[] = [];
 
       try {
         // Try streaming first
         for await (const chunk of streamWorkflows({ query: content })) {
           if (chunk.type === 'source_documents') {
-            workflows = chunk.data;
+            workflows = chunk.data as WorkflowResponse[];
           } else if (chunk.type === 'content') {
-            streamedContent += chunk.data;
-            setMessages(prev => prev.map(msg => 
-              msg.id === assistantMessageId 
+            streamedContent += chunk.data as string;
+            setMessages(prev => prev.map(msg =>
+              msg.id === assistantMessageId
                 ? { ...msg, content: streamedContent, workflows }
                 : msg
             ));
           } else if (chunk.type === 'done') {
-            setMessages(prev => prev.map(msg => 
-              msg.id === assistantMessageId 
+            setMessages(prev => prev.map(msg =>
+              msg.id === assistantMessageId
                 ? { ...msg, isStreaming: false }
                 : msg
             ));
@@ -81,17 +81,17 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
         }
       } catch (streamError) {
         console.warn("Streaming failed, falling back to regular query:", streamError);
-        
+
         // Fallback to non-streaming
         const response = await queryWorkflows({ query: content });
-        setMessages(prev => prev.map(msg => 
-          msg.id === assistantMessageId 
-            ? { 
-                ...msg, 
-                content: response.result, 
-                workflows: response.source_documents,
-                isStreaming: false 
-              }
+        setMessages(prev => prev.map(msg =>
+          msg.id === assistantMessageId
+            ? {
+              ...msg,
+              content: response.result,
+              workflows: response.source_documents,
+              isStreaming: false
+            }
             : msg
         ));
       }
@@ -108,7 +108,6 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
   const handleRetry = async () => {
     console.log('🔄 Clearing error state...');
     setError(null);
-    setConnectionChecked(false); // Reset connection check for next message
   };
 
   // Chat interface loads immediately - no blocking health checks
@@ -151,9 +150,9 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
                 I can help you discover n8n workflows based on your needs. Try asking something like:
               </p>
               <div className="space-y-2 text-xs md:text-sm text-muted-foreground max-w-lg">
-                <p>• "How do I integrate Slack with Google Sheets?"</p>
-                <p>• "Show me workflows for social media automation"</p>
-                <p>• "I need to process emails automatically"</p>
+                <p>• &quot;How do I integrate Slack with Google Sheets?&quot;</p>
+                <p>• &quot;Show me workflows for social media automation&quot;</p>
+                <p>• &quot;I need to process emails automatically&quot;</p>
               </div>
             </div>
           ) : (

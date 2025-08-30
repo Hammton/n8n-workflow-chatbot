@@ -43,7 +43,7 @@ export async function queryWorkflows(request: QueryRequest): Promise<QueryRespon
 
 export async function* streamWorkflows(request: QueryRequest): AsyncGenerator<{
   type: 'source_documents' | 'content' | 'done';
-  data: any;
+  data: WorkflowResponse[] | string;
 }> {
   const response = await fetch(`${API_BASE_URL}/query/stream`, {
     method: 'POST',
@@ -79,7 +79,7 @@ export async function* streamWorkflows(request: QueryRequest): AsyncGenerator<{
           try {
             const data = JSON.parse(line.slice(6));
             yield data;
-          } catch (e) {
+          } catch {
             console.warn('Failed to parse SSE data:', line);
           }
         }

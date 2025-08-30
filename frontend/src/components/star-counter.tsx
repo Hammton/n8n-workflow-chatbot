@@ -55,7 +55,7 @@ export default function StarCounter({ className = '' }: StarCounterProps) {
           const localStarred = localStorage.getItem('has_starred')
           setHasStarred(localStarred === 'true')
         }
-      } catch (error) {
+      } catch {
         console.log('API not available, using offline mode')
         // Fallback to localStorage when API is not available
         const localCount = localStorage.getItem('star_count')
@@ -107,7 +107,7 @@ export default function StarCounter({ className = '' }: StarCounterProps) {
         localStorage.setItem('has_starred', 'true')
         localStorage.setItem('star_count', newCount.toString())
       }
-    } catch (error) {
+    } catch {
       console.log('API not available, using offline mode')
       // Offline mode - increment locally
       const newCount = starCount + 1
