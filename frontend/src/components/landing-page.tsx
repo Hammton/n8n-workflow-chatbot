@@ -496,7 +496,7 @@ const SkeletonFour = () => {
         }, 3000);
 
         return () => clearInterval(interval);
-    }, []);
+    }, [explanations.length]);
 
     const current = explanations[currentExplanation];
 

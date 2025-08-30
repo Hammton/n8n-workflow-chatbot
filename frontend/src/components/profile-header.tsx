@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone } from "lucide-react";
+import Image from "next/image";
 
 export function ProfileHeader() {
     const [isHovered, setIsHovered] = useState(false);
@@ -29,9 +30,11 @@ export function ProfileHeader() {
                             ${isHovered ? 'scale-110 shadow-lg' : 'scale-100'}
                         `}>
                             <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-gray-800">
-                                <img
+                                <Image
                                     src="/profile.jpeg"
                                     alt="Profile"
+                                    width={64}
+                                    height={64}
                                     className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                                 />
                             </div>

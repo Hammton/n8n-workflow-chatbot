@@ -133,7 +133,7 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
             <div className="flex-1">
               <h1 className="text-xl md:text-2xl font-bold">n8n Workflow Assistant</h1>
               <p className="text-muted-foreground text-xs md:text-sm">
-                Ask me about n8n workflows and I'll help you find relevant automations.
+                Ask me about n8n workflows and I&apos;ll help you find relevant automations.
               </p>
             </div>
           </div>
