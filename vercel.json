@@ -1,22 +1,30 @@
 {
+  "functions": {
+    "api/query.py": {
+      "runtime": "python3.9"
+    },
+    "api/stream.py": {
+      "runtime": "python3.9"
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/python/query/stream",
+      "source": "/api/query/stream",
       "destination": "/api/stream.py"
     },
     {
-      "source": "/api/python/query",
+      "source": "/api/query",
       "destination": "/api/query.py"
     }
   ],
   "build": {
     "env": {
-      "NEXT_PUBLIC_API_BASE_URL": "/api/python",
-      "NEXT_PUBLIC_API_URL": "/api/python"
+      "NEXT_PUBLIC_API_BASE_URL": "/api",
+      "NEXT_PUBLIC_API_URL": "/api"
     }
   },
   "env": {
-    "NEXT_PUBLIC_API_BASE_URL": "/api/python",
-    "NEXT_PUBLIC_API_URL": "/api/python"
+    "NEXT_PUBLIC_API_BASE_URL": "/api",
+    "NEXT_PUBLIC_API_URL": "/api"
   }
 }

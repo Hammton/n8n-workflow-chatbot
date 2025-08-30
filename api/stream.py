@@ -1,16 +1,10 @@
 import os
 import json
 import asyncio
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from http.server import BaseHTTPRequestHandler
 from supabase import create_client, Client
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_openai import AzureChatOpenAI
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # --- Supabase and Azure OpenAI Configuration ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -22,19 +16,6 @@ AZURE_OPENAI_EMBEDDING_ENDPOINT = os.environ.get("AZURE_OPENAI_EMBEDDING_ENDPOIN
 
 # --- Supabase Client ---
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-class QueryRequest(BaseModel):
-    query: str
 
 async def get_workflow_recommendations_stream(query: str):
     """Stream workflow recommendations using direct Supabase calls and Azure OpenAI."""
@@ -85,7 +66,7 @@ async def get_workflow_recommendations_stream(query: str):
         streaming=True
     )
     
-    # Create prompt for the LLM (without links since they're in source_documents)
+    # Create prompt for the LLM
     prompt = f"""Based on the user's query: "{query}"
 
 Here are the most relevant n8n workflows I found:
@@ -109,27 +90,48 @@ Response:"""
     async for chunk in llm.astream(prompt):
         if chunk.content:
             yield f"data: {json.dumps({'type': 'content', 'data': chunk.content})}\n\n"
-            await asyncio.sleep(0.01)  # Small delay for smooth streaming
+            await asyncio.sleep(0.01)
     
     yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
-@app.post("/")
-async def query_workflows_stream(request: QueryRequest):
-    """Stream workflow recommendations."""
-    try:
-        print(f"Received streaming query: {request.query}")
-        return StreamingResponse(
-            get_workflow_recommendations_stream(request.query),
-            media_type="text/plain",
-            headers={
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "*",
-            }
-        )
-    except Exception as e:
-        print(f"Error in query_workflows_stream: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        try:
+            # Set streaming headers
+            self.send_response(200)
+            self.send_header('Content-type', 'text/event-stream')
+            self.send_header('Cache-Control', 'no-cache')
+            self.send_header('Connection', 'keep-alive')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+            self.end_headers()
+
+            # Read request body
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            request_data = json.loads(post_data.decode('utf-8'))
+            
+            query = request_data.get('query', '')
+            print(f"Received streaming query: {query}")
+            
+            # Stream response
+            async def stream_response():
+                async for chunk in get_workflow_recommendations_stream(query):
+                    self.wfile.write(chunk.encode('utf-8'))
+                    self.wfile.flush()
+            
+            # Run async function
+            asyncio.run(stream_response())
+            
+        except Exception as e:
+            print(f"Error in streaming: {str(e)}")
+            error_data = f"data: {json.dumps({'type': 'error', 'data': str(e)})}\n\n"
+            self.wfile.write(error_data.encode('utf-8'))
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
