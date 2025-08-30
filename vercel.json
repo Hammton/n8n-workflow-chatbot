@@ -1,12 +1,4 @@
 {
-  "functions": {
-    "api/query.py": {
-      "runtime": "@vercel/python"
-    },
-    "api/stream.py": {
-      "runtime": "@vercel/python"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/query/stream",

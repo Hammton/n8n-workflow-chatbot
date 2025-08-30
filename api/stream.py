@@ -1,7 +1,6 @@
 import os
 import json
 import asyncio
-from http.server import BaseHTTPRequestHandler
 from supabase import create_client, Client
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_openai import AzureChatOpenAI
@@ -94,44 +93,75 @@ Response:"""
     
     yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
-class handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        try:
-            # Set streaming headers
-            self.send_response(200)
-            self.send_header('Content-type', 'text/event-stream')
-            self.send_header('Cache-Control', 'no-cache')
-            self.send_header('Connection', 'keep-alive')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-            self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-            self.end_headers()
-
-            # Read request body
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-            request_data = json.loads(post_data.decode('utf-8'))
-            
-            query = request_data.get('query', '')
-            print(f"Received streaming query: {query}")
-            
-            # Stream response
-            async def stream_response():
-                async for chunk in get_workflow_recommendations_stream(query):
-                    self.wfile.write(chunk.encode('utf-8'))
-                    self.wfile.flush()
-            
-            # Run async function
-            asyncio.run(stream_response())
-            
-        except Exception as e:
-            print(f"Error in streaming: {str(e)}")
-            error_data = f"data: {json.dumps({'type': 'error', 'data': str(e)})}\n\n"
-            self.wfile.write(error_data.encode('utf-8'))
-
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
+def handler(request):
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
+            },
+            'body': ''
+        }
+    
+    if request.method != 'POST':
+        return {
+            'statusCode': 405,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'application/json',
+            },
+            'body': json.dumps({'error': 'Method not allowed'})
+        }
+    
+    try:
+        # Parse request body
+        if hasattr(request, 'body'):
+            body = request.body
+        else:
+            body = request.get('body', '')
+        
+        if isinstance(body, bytes):
+            body = body.decode('utf-8')
+        
+        request_data = json.loads(body)
+        query = request_data.get('query', '')
+        
+        print(f"Received streaming query: {query}")
+        
+        # For streaming, we need to collect all chunks and return them
+        # Note: Vercel serverless functions don't support true streaming
+        # So we'll collect the response and return it as a single response
+        async def collect_stream():
+            chunks = []
+            async for chunk in get_workflow_recommendations_stream(query):
+                chunks.append(chunk)
+            return ''.join(chunks)
+        
+        # Run async function
+        stream_content = asyncio.run(collect_stream())
+        
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            },
+            'body': stream_content
+        }
+        
+    except Exception as e:
+        print(f"Error in streaming: {str(e)}")
+        error_data = f"data: {json.dumps({'type': 'error', 'data': str(e)})}\n\n"
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'text/event-stream',
+            },
+            'body': error_data
+        }
