@@ -88,11 +88,16 @@ Please provide a helpful response that:
 Response:"""
         
         # Stream LLM response
-        async for chunk in llm.astream(prompt):
-            if chunk.content:
-                yield f"data: {json.dumps({'type': 'content', 'data': chunk.content})}\n\n"
-                await asyncio.sleep(0.01)
+        try:
+            async for chunk in llm.astream(prompt):
+                if chunk.content:
+                    yield f"data: {json.dumps({'type': 'content', 'data': chunk.content})}\n\n"
+                    await asyncio.sleep(0.01)
+        except Exception as llm_error:
+            print(f"LLM streaming error: {str(llm_error)}")
+            yield f"data: {json.dumps({'type': 'error', 'data': str(llm_error)})}\n\n"
         
+        # Always send done message (this will be sent again in the finally block, but that's ok)
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
         
     except Exception as e:
@@ -137,8 +142,19 @@ class handler(BaseHTTPRequestHandler):
             
             # Stream response
             async def stream_response():
-                async for chunk in get_workflow_recommendations_stream(query):
-                    self.wfile.write(chunk.encode('utf-8'))
+                try:
+                    async for chunk in get_workflow_recommendations_stream(query):
+                        self.wfile.write(chunk.encode('utf-8'))
+                        self.wfile.flush()
+                except Exception as stream_error:
+                    print(f"Error during streaming: {str(stream_error)}")
+                    # Always send done message even if there's an error
+                    error_data = f"data: {json.dumps({'type': 'error', 'data': str(stream_error)})}\n\n"
+                    self.wfile.write(error_data.encode('utf-8'))
+                finally:
+                    # Ensure we always send the done message
+                    done_data = f"data: {json.dumps({'type': 'done'})}\n\n"
+                    self.wfile.write(done_data.encode('utf-8'))
                     self.wfile.flush()
             
             # Run async function

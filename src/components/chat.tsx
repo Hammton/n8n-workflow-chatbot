@@ -60,7 +60,19 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
       let workflows: WorkflowResponse[] = [];
 
       try {
-        // Try streaming first
+        // Try streaming first with timeout
+        const streamTimeout = setTimeout(() => {
+          console.warn("Stream timeout - forcing completion");
+          setMessages((prev: Message[]) => prev.map((msg: Message) =>
+            msg.id === assistantMessageId
+              ? { ...msg, isStreaming: false }
+              : msg
+          ));
+          setIsLoading(false);
+        }, 60000); // 60 second timeout
+
+        let streamCompleted = false;
+        
         for await (const chunk of streamWorkflows({ query: content })) {
           if (chunk.type === 'source_documents') {
             workflows = chunk.data as WorkflowResponse[];
@@ -71,13 +83,26 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
                 ? { ...msg, content: streamedContent, workflows }
                 : msg
             ));
-          } else if (chunk.type === 'done') {
+          } else if (chunk.type === 'done' || chunk.type === 'error') {
+            streamCompleted = true;
+            clearTimeout(streamTimeout);
             setMessages((prev: Message[]) => prev.map((msg: Message) =>
               msg.id === assistantMessageId
                 ? { ...msg, isStreaming: false }
                 : msg
             ));
+            break;
           }
+        }
+
+        // If stream ended without 'done' message, mark as completed
+        if (!streamCompleted) {
+          clearTimeout(streamTimeout);
+          setMessages((prev: Message[]) => prev.map((msg: Message) =>
+            msg.id === assistantMessageId
+              ? { ...msg, isStreaming: false }
+              : msg
+          ));
         }
       } catch (streamError) {
         console.warn("Streaming failed, falling back to regular query:", streamError);
