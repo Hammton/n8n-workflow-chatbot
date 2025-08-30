@@ -16,7 +16,9 @@ import {
 import { useState, useEffect, useCallback } from "react";
 import { ProfileHeader } from "./profile-header";
 import FooterSection from "./footer";
-import StarCounter from "./star-counter";
+import dynamic from 'next/dynamic';
+
+const StarCounter = dynamic(() => import('./star-counter'), { ssr: false });
 
 interface LandingPageProps {
     onStartChat: () => void;
