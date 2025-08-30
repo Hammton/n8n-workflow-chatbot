@@ -45,7 +45,9 @@ class handler(BaseHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Headers', 'Content-Type')
             self.end_headers()
             
-            self.wfile.write(json.dumps(result.data).encode())
+            # The result.data is a list with one element, so we return the first element
+            response_data = result.data[0] if result.data else {"success": False, "message": "Failed to add star", "count": 0}
+            self.wfile.write(json.dumps(response_data).encode())
             
         except Exception as e:
             print(f"Error adding star: {str(e)}")

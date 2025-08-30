@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { Star } from 'lucide-react'
+import { createClient } from '@supabase/supabase-js'
+
+// TODO: Replace with your Supabase URL and anon key
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 interface StarCounterProps {
   className?: string
@@ -68,6 +75,20 @@ export default function StarCounter({ className = '' }: StarCounterProps) {
 
     fetchStarData()
   }, [sessionId])
+
+  // Listen for real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('star_count')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'star_count' }, (payload) => {
+        setStarCount(payload.new.count)
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
 
   const handleStarClick = async () => {
     if (hasStarred || isLoading) return
