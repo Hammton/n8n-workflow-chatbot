@@ -35,7 +35,7 @@ export default function StarCounter({ className = '' }: StarCounterProps) {
     const fetchStarData = async () => {
       try {
         // Get current star count
-        const countResponse = await fetch('http://localhost:8000/stars/count')
+        const countResponse = await fetch('/api/star_count')
         if (countResponse.ok) {
           const countData = await countResponse.json()
           setStarCount(countData.count || 63)
@@ -46,7 +46,7 @@ export default function StarCounter({ className = '' }: StarCounterProps) {
         }
 
         // Check if user has already starred
-        const checkResponse = await fetch(`http://localhost:8000/stars/check/${sessionId}`)
+        const checkResponse = await fetch(`/api/star_check/${sessionId}`)
         if (checkResponse.ok) {
           const checkData = await checkResponse.json()
           setHasStarred(checkData.has_starred || false)
@@ -75,7 +75,7 @@ export default function StarCounter({ className = '' }: StarCounterProps) {
     setIsLoading(true)
     
     try {
-      const response = await fetch('http://localhost:8000/stars/add', {
+      const response = await fetch('/api/star_add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

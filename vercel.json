@@ -7,6 +7,18 @@
     {
       "source": "/api/query",
       "destination": "/api/query.py"
+    },
+    {
+      "source": "/api/star_count",
+      "destination": "/api/star_count.py"
+    },
+    {
+      "source": "/api/star_add",
+      "destination": "/api/star_add.py"
+    },
+    {
+      "source": "/api/star_check/(.*)",
+      "destination": "/api/star_check.py"
     }
   ],
   "build": {
