@@ -15,7 +15,6 @@ interface ChatProps {
 
 export function Chat({ onBackToLanding }: ChatProps = {}) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -30,7 +29,7 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
   }, [messages]);
 
   const handleSendMessage = async (content: string) => {
-    if (!content.trim() || isLoading) return;
+    if (!content.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -40,7 +39,6 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
     };
 
     setMessages((prev: Message[]) => [...prev, userMessage]);
-    setIsLoading(true);
     setError(null);
 
     // Create assistant message for streaming
@@ -68,24 +66,16 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
               ? { ...msg, isStreaming: false }
               : msg
           ));
-          setIsLoading(false);
-        }, 30000); // 30 second timeout (reduced since we stop loading earlier)
+        }, 30000); // 30 second timeout
 
         let streamCompleted = false;
-        let firstContentReceived = false;
-        
+
         for await (const chunk of streamWorkflows({ query: content })) {
           if (chunk.type === 'source_documents') {
             workflows = chunk.data as WorkflowResponse[];
           } else if (chunk.type === 'content') {
             streamedContent += chunk.data as string;
-            
-            // Stop loading and enable input as soon as we get first content
-            if (!firstContentReceived) {
-              firstContentReceived = true;
-              setIsLoading(false);
-            }
-            
+
             setMessages((prev: Message[]) => prev.map((msg: Message) =>
               msg.id === assistantMessageId
                 ? { ...msg, content: streamedContent, workflows }
@@ -112,16 +102,9 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
               : msg
           ));
         }
-        
-        // Ensure loading is stopped even if no content was received
-        if (!firstContentReceived) {
-          setIsLoading(false);
-        }
+
       } catch (streamError) {
         console.warn("Streaming failed, falling back to regular query:", streamError);
-        
-        // Stop loading immediately when falling back
-        setIsLoading(false);
 
         // Fallback to non-streaming
         const response = await queryWorkflows({ query: content });
@@ -141,8 +124,6 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
       setError(error instanceof Error ? error.message : "An error occurred");
       // Remove the failed message
       setMessages((prev: Message[]) => prev.filter((msg: Message) => msg.id !== assistantMessageId));
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -230,20 +211,12 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
         </div>
       )}
 
-      {/* Loading indicator */}
-      {isLoading && (
-        <div className="border-t bg-muted/50 p-4">
-          <div className="max-w-4xl mx-auto flex items-center gap-3 text-muted-foreground text-sm">
-            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-            <span>Searching through 1,987 n8n workflows and generating AI response...</span>
-          </div>
-        </div>
-      )}
+
 
       {/* Input */}
       <ChatInput
         onSendMessage={handleSendMessage}
-        disabled={isLoading}
+        disabled={false}
       />
     </div>
   );
