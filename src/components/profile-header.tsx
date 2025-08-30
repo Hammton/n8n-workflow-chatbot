@@ -1,16 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone } from "lucide-react";
+import { Calendar, Phone } from "lucide-react";
 import Image from "next/image";
+import { getCalApi } from "@calcom/embed-react";
 
 export function ProfileHeader() {
     const [isHovered, setIsHovered] = useState(false);
 
-    const handleHireMe = () => {
-        // You can customize this with your contact information
-        window.open("mailto:hammtonndeke@gmail.com?subject=Hire Me - n8n Workflow Expert", "_blank");
+    useEffect(() => {
+        (async function () {
+            const cal = await getCalApi({ "namespace": "30min" });
+            cal("ui", { "hideEventTypeDetails": false, "layout": "month_view" });
+        })();
+    }, []);
+
+    const handleBookSession = () => {
+        // Trigger Cal.com booking popup
+        const calButton = document.querySelector('[data-cal-namespace="30min"]') as HTMLElement;
+        if (calButton) {
+            calButton.click();
+        }
     };
 
     return (
@@ -18,7 +29,7 @@ export function ProfileHeader() {
             <div className="container mx-auto px-4 py-3 sm:py-4">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                     {/* Profile Picture */}
-                    <div 
+                    <div
                         className="relative group"
                         onMouseEnter={() => setIsHovered(true)}
                         onMouseLeave={() => setIsHovered(false)}
@@ -39,7 +50,7 @@ export function ProfileHeader() {
                                 />
                             </div>
                         </div>
-                        
+
                         {/* Animated ring */}
                         <div className={`
                             absolute inset-0 rounded-full border-2 border-blue-400 
@@ -54,22 +65,22 @@ export function ProfileHeader() {
                                 Hire Me
                             </h2>
                             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
-                                n8n Workflow Expert & AI Developer
+                                AI Agent I n8n I Automation
                             </p>
                         </div>
 
                         {/* Contact Buttons */}
                         <div className="flex gap-2">
                             <Button
-                                onClick={handleHireMe}
+                                onClick={handleBookSession}
                                 size="sm"
                                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
                             >
-                                <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                                <span className="hidden sm:inline">Contact Me</span>
-                                <span className="sm:hidden">Email</span>
+                                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                <span className="hidden sm:inline">Book AI Session</span>
+                                <span className="sm:hidden">Book AI Session</span>
                             </Button>
-                            
+
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -86,9 +97,17 @@ export function ProfileHeader() {
                 {/* Mobile subtitle */}
                 <div className="text-center mt-2 sm:hidden">
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                        n8n Workflow Expert & AI Developer
+                        AI Agent I n8n I Automation
                     </p>
                 </div>
+
+                {/* Hidden Cal.com trigger button */}
+                <button
+                    data-cal-namespace="30min"
+                    data-cal-link="hammton-ndeke-f0du2x/30min"
+                    data-cal-config='{"layout":"month_view"}'
+                    style={{ display: 'none' }}
+                />
             </div>
         </div>
     );
