@@ -11,11 +11,12 @@
   ],
   "build": {
     "env": {
-      "NEXT_PUBLIC_API_BASE_URL": "/api",
+      "NEXT_PUBLIC_API_BASE_URL": "/api/python",
       "NEXT_PUBLIC_API_URL": "/api/python"
     }
   },
   "env": {
+    "NEXT_PUBLIC_API_BASE_URL": "/api/python",
     "NEXT_PUBLIC_API_URL": "/api/python"
   }
 }
