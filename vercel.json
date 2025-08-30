@@ -1,8 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/api/python/:path*",
-      "destination": "/api/main.py"
+      "source": "/api/python/query/stream",
+      "destination": "/api/stream.py"
+    },
+    {
+      "source": "/api/python/query",
+      "destination": "/api/query.py"
     }
   ],
   "build": {
