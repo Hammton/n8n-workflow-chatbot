@@ -5,9 +5,9 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('🔄 Proxying search request to backend:', `${BACKEND_URL}/search`);
+    console.log('🔄 Proxying search request to backend:', `${BACKEND_URL}/query`);
     
-    const response = await fetch(`${BACKEND_URL}/search`, {
+    const response = await fetch(`${BACKEND_URL}/query`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

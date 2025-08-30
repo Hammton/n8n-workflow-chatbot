@@ -1,13 +1,22 @@
 {
+  "functions": {
+    "api/main.py": {
+      "runtime": "python3.9"
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "source": "/api/python/:path*",
+      "destination": "/api/main.py"
     }
   ],
   "build": {
     "env": {
-      "NEXT_PUBLIC_API_BASE_URL": "/api"
+      "NEXT_PUBLIC_API_BASE_URL": "/api",
+      "NEXT_PUBLIC_API_URL": "/api/python"
     }
+  },
+  "env": {
+    "NEXT_PUBLIC_API_URL": "/api/python"
   }
 }

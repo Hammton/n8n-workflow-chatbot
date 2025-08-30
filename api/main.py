@@ -288,5 +288,20 @@ async def check_user_starred(request: Request, session_id: str):
         print(f"Error checking star status: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    try:
+        # Test database connection
+        result = supabase.rpc('get_star_count').execute()
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": "2024-01-01T00:00:00Z"
+        }
+    except Exception as e:
+        print(f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=503, detail=f"Service unhealthy: {str(e)}")
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
