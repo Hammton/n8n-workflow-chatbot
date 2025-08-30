@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || '/api/python';
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('🔄 Proxying stream request to backend:', `${BACKEND_URL}/query/stream`);
     
-    const response = await fetch(`${BACKEND_URL}/query/stream`, {
+    // Get the base URL from the request
+    const baseUrl = new URL(request.url).origin;
+    const backendUrl = `${baseUrl}/api/python/query/stream`;
+    
+    console.log('🔄 Proxying stream request to backend:', backendUrl);
+    
+    const response = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
       { 
         error: 'Failed to connect to backend server',
         details: error instanceof Error ? error.message : 'Unknown error',
-        backend_url: BACKEND_URL
+        backend_url: `${new URL(request.url).origin}/api/python/query/stream`
       },
       { status: 503 }
     );
