@@ -69,15 +69,23 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
               : msg
           ));
           setIsLoading(false);
-        }, 60000); // 60 second timeout
+        }, 30000); // 30 second timeout (reduced since we stop loading earlier)
 
         let streamCompleted = false;
+        let firstContentReceived = false;
         
         for await (const chunk of streamWorkflows({ query: content })) {
           if (chunk.type === 'source_documents') {
             workflows = chunk.data as WorkflowResponse[];
           } else if (chunk.type === 'content') {
             streamedContent += chunk.data as string;
+            
+            // Stop loading and enable input as soon as we get first content
+            if (!firstContentReceived) {
+              firstContentReceived = true;
+              setIsLoading(false);
+            }
+            
             setMessages((prev: Message[]) => prev.map((msg: Message) =>
               msg.id === assistantMessageId
                 ? { ...msg, content: streamedContent, workflows }
@@ -104,8 +112,16 @@ export function Chat({ onBackToLanding }: ChatProps = {}) {
               : msg
           ));
         }
+        
+        // Ensure loading is stopped even if no content was received
+        if (!firstContentReceived) {
+          setIsLoading(false);
+        }
       } catch (streamError) {
         console.warn("Streaming failed, falling back to regular query:", streamError);
+        
+        // Stop loading immediately when falling back
+        setIsLoading(false);
 
         // Fallback to non-streaming
         const response = await queryWorkflows({ query: content });
